@@ -14,5 +14,6 @@ namespace HabitTracker.Services
         HabitLog? GetLogForDate(int habitId, DateTime date);
         void AddLog(HabitLog log);
         List<HabitLog> GetLogsForHabit(int habitId);
+        List<Habit> GetHabitsForDate(DateTime date);
     }
 }

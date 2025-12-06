@@ -15,11 +15,19 @@
             <ListBox ItemsSource="{Binding Habits}"
                      SelectedItem="{Binding SelectedHabit}"
                      DisplayMemberPath="Name"
-                     Height="350"/>
-            <Button Content="Neue Gewohnheit"
-                    Command="{Binding AddHabitCommand}" />
+                     Height="200" Margin="0,10,0,10"/>
+
             <Button Content="Löschen"
                     Command="{Binding DeleteHabitCommand}" />
+            
+            <TextBlock Text="Name:" Margin="0,10,0,0" />
+            <TextBox Text="{Binding NewHabitName}" Width="200" />
+
+            <TextBlock Text="Kategorie:" Margin="0,10,0,0" />
+            <TextBox Text="{Binding NewHabitCategory}" Width="200" />
+
+            <Button Content="Neue Gewohnheit hinzufügen" Margin="0,20,0,0"
+                    Command="{Binding AddHabitCommand}" />
         </StackPanel>
 
         <!-- Detail area -->
@@ -31,6 +39,11 @@
             <Button Content="Heute erledigt"
                     Command="{Binding MarkDoneCommand}"
                     Margin="0,20,0,0"/>
+
+            <TextBlock Text="Heute schon erledigt:" FontSize="16" Margin="0,20,0,0"/>
+            <ListBox ItemsSource="{Binding HabitsDoneToday}"
+                     DisplayMemberPath="Name"
+                     Height="200" Margin="0,10,0,10"/>
         </StackPanel>
 
     </Grid>

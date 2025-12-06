@@ -6,6 +6,8 @@ using HabitTracker.Commands;
 using HabitTracker.Models;
 using HabitTracker.Services;
 using System.Windows.Input;
+using System.IO;
+using System.Windows;
 
 namespace HabitTracker.ViewModels
 {
@@ -16,6 +18,9 @@ namespace HabitTracker.ViewModels
         public ObservableCollection<HabitViewModel> Habits { get; set; } =
             new ObservableCollection<HabitViewModel>();
 
+        public ObservableCollection<HabitViewModel> HabitsDoneToday { get; set; } =
+            new ObservableCollection<HabitViewModel>();
+
         private HabitViewModel? _selectedHabit;
         public HabitViewModel? SelectedHabit
         {
@@ -23,19 +28,24 @@ namespace HabitTracker.ViewModels
             set => _selectedHabit = value;
         }
 
+        public string? NewHabitName { get; set; }
+        public string? NewHabitCategory { get; set; }
+
+
         public ICommand AddHabitCommand { get; }
         public ICommand MarkDoneCommand { get; }
         public ICommand DeleteHabitCommand { get; }
 
         public MainViewModel()
-        {
-            _repo = new HabitRepository("habits.db");
+        {   
+            _repo = new HabitRepository(Path.Combine("Data", "habits.db"));
 
             AddHabitCommand = new RelayCommand(_ => AddHabit());
             MarkDoneCommand = new RelayCommand(_ => MarkDoneToday(), _ => SelectedHabit != null);
             DeleteHabitCommand = new RelayCommand(_ => DeleteHabit(), _ => SelectedHabit != null);
 
             LoadHabits();
+            LoadHabitsDoneToday();
         }
 
         private void LoadHabits()
@@ -47,10 +57,16 @@ namespace HabitTracker.ViewModels
 
         private void AddHabit()
         {
+            if (NewHabitName == null || NewHabitName.Trim() == "")
+            {
+                MessageBox.Show("Bitte geben Sie einen Namen für die Gewohnheit ein.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            
             var habit = new Habit
             {
-                Name = "Neue Gewohnheit",
-                Category = "Allgemein",
+                Name = NewHabitName,
+                Category = NewHabitCategory == null || NewHabitCategory.Trim() == "" ? "Keine" :  NewHabitCategory,
                 CreatedAt = DateTime.Now
             };
 
@@ -83,6 +99,16 @@ namespace HabitTracker.ViewModels
                 };
                 _repo.AddLog(log);
             }
+            LoadHabitsDoneToday();
+        }
+
+        private void LoadHabitsDoneToday()
+        {
+            HabitsDoneToday.Clear();
+            var today = DateTime.Today;
+            var habits = _repo.GetHabitsForDate(today);
+            foreach (var h in habits)
+                HabitsDoneToday.Add(new HabitViewModel(h));
         }
     }
 }

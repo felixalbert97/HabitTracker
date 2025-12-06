@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using HabitTracker.Models;
 using Microsoft.Data.Sqlite;
-using HabitTracker.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace HabitTracker.Services
 {
@@ -12,7 +13,16 @@ namespace HabitTracker.Services
 
         public HabitRepository(string databasePath)
         {
-            _connectionString = $"Data Source={databasePath}";
+            // relativen Pfad zur ausführbaren Anwendung auflösen
+            var fullPath = Path.IsPathRooted(databasePath)
+                ? databasePath
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, databasePath);
+
+            var dir = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir); // stellt sicher, dass das Verzeichnis existiert
+
+            _connectionString = $"Data Source={fullPath};Mode=ReadWriteCreate";
             Initialize();
         }
 
@@ -155,6 +165,38 @@ namespace HabitTracker.Services
                     Id = reader.GetInt32(0),
                     HabitId = reader.GetInt32(1),
                     Date = DateTime.Parse(reader.GetString(2))
+                });
+            }
+
+            return result;
+        }
+
+        public List<Habit> GetHabitsForDate(DateTime date)
+        {
+            var result = new List<Habit>();
+
+            using var con = new SqliteConnection(_connectionString);
+            con.Open();
+
+            var cmd = con.CreateCommand();
+            // DISTINCT, damit ein Habit nur einmal zurückgegeben wird, auch wenn mehrere Logs existieren
+            cmd.CommandText =
+                @"SELECT DISTINCT h.Id, h.Name, h.Category, h.CreatedAt
+                  FROM Habits h
+                  INNER JOIN HabitLogs l ON h.Id = l.HabitId
+                  WHERE l.Date = @date;";
+
+            cmd.Parameters.AddWithValue("@date", date.ToString("yyyy-MM-dd"));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new Habit
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    Category = reader.GetString(2),
+                    CreatedAt = DateTime.Parse(reader.GetString(3))
                 });
             }
 
