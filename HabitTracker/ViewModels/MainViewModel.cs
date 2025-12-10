@@ -13,6 +13,54 @@ namespace HabitTracker.ViewModels
 {
     public class MainViewModel
     {
+        private readonly ITaskRepository _repo;
+
+        public ObservableCollection<TaskViewModel> UncompletedTasks { get; set; } = 
+            new ObservableCollection<TaskViewModel>();
+
+        public ObservableCollection<TaskViewModel> CompletedTasks { get; set; } =
+            new ObservableCollection<TaskViewModel>();
+        public TaskViewModel? SelectedTask { get; set; }
+
+
+        // TODO: evtl. durch Template ViewModel ersetzen
+        public ObservableCollection<TaskTemplate> TaskTemplates { get; set; } =
+            new ObservableCollection<TaskTemplate>();
+        public TaskTemplate? SelectedTaskTemplate { get; set; }
+
+
+        public ICommand MarkCompletedCommand { get; }
+        public ICommand MarkUncompletedCommand { get; }
+        public ICommand DeleteTaskCommand { get; }
+
+        public MainViewModel()
+        {
+            _repo = new TaskRepository(Path.Combine("Data", "tasks.db"));
+
+            MarkCompletedCommand = new RelayCommand(_ => MarkCompleted(), _ => SelectedTask != null);
+            MarkUncompletedCommand = new RelayCommand(_ => MarkUncompleted(), _ => SelectedTask != null);
+            DeleteTaskCommand = new RelayCommand(_ => DeleteTask(), _ => SelectedTask != null);
+
+            //LoadHabits();
+            //LoadHabitsDoneToday();
+        }
+
+        private void MarkCompleted()
+        {
+
+        }
+
+        private void MarkUncompleted()
+        {
+
+        }
+
+        private void DeleteTask()
+        {
+        }
+
+
+        /*
         private readonly IHabitRepository _repo;
 
         public ObservableCollection<HabitViewModel> Habits { get; set; } =
@@ -109,6 +157,6 @@ namespace HabitTracker.ViewModels
             var habits = _repo.GetHabitsForDate(today);
             foreach (var h in habits)
                 HabitsDoneToday.Add(new HabitViewModel(h));
-        }
+        }*/
     }
 }
