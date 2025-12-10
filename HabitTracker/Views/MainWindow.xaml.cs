@@ -19,5 +19,7 @@ namespace HabitTracker.Views
             InitializeComponent();
             DataContext = new MainViewModel();
         }
+
+
     }
 }
