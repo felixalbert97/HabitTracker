@@ -1,114 +1,260 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections.ObjectModel;
-using HabitTracker.Commands;
+﻿using HabitTracker.Commands;
 using HabitTracker.Models;
 using HabitTracker.Services;
-using System.Windows.Input;
+using HabitTracker.Helpers;
+using Microsoft.VisualBasic;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows;
+using System.Windows.Input;
 
 namespace HabitTracker.ViewModels
 {
-    public class MainViewModel
+    public class MainViewModel : INotifyPropertyChanged
     {
-        private readonly IHabitRepository _repo;
+        private readonly ITaskRepository _repo;
+        private DateTime _selectedDate = DateTime.Today;
+        private TaskListItem? _selectedCompletedTask;
+        private TaskListItem? _selectedUncompletedTask;
 
-        public ObservableCollection<HabitViewModel> Habits { get; set; } =
-            new ObservableCollection<HabitViewModel>();
-
-        public ObservableCollection<HabitViewModel> HabitsDoneToday { get; set; } =
-            new ObservableCollection<HabitViewModel>();
-
-        private HabitViewModel? _selectedHabit;
-        public HabitViewModel? SelectedHabit
+        public DateTime SelectedDate
         {
-            get => _selectedHabit;
-            set => _selectedHabit = value;
+            get => _selectedDate;
+            set => SetProperty(ref _selectedDate, value, onChanged: () => LoadTasks());
         }
 
-        public string? NewHabitName { get; set; }
-        public string? NewHabitCategory { get; set; }
+        public ObservableCollection<TaskListItem> UncompletedTasks { get; set; } =
+            new ObservableCollection<TaskListItem>();
 
+        public ObservableCollection<TaskListItem> CompletedTasks { get; set; } =
+            new ObservableCollection<TaskListItem>();
 
-        public ICommand AddHabitCommand { get; }
-        public ICommand MarkDoneCommand { get; }
-        public ICommand DeleteHabitCommand { get; }
-
-        public MainViewModel()
-        {   
-            _repo = new HabitRepository(Path.Combine("Data", "habits.db"));
-
-            AddHabitCommand = new RelayCommand(_ => AddHabit());
-            MarkDoneCommand = new RelayCommand(_ => MarkDoneToday(), _ => SelectedHabit != null);
-            DeleteHabitCommand = new RelayCommand(_ => DeleteHabit(), _ => SelectedHabit != null);
-
-            LoadHabits();
-            LoadHabitsDoneToday();
-        }
-
-        private void LoadHabits()
+        public TaskListItem? SelectedCompletedTask
         {
-            Habits.Clear();
-            foreach (var h in _repo.GetAllHabits())
-                Habits.Add(new HabitViewModel(h));
-        }
-
-        private void AddHabit()
-        {
-            if (NewHabitName == null || NewHabitName.Trim() == "")
+            get => _selectedCompletedTask;
+            set
             {
-                MessageBox.Show("Bitte geben Sie einen Namen für die Gewohnheit ein.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                if (SetProperty(ref _selectedCompletedTask, value))
+                {
+                    if (value != null)
+                    {
+                        // Auswahl in der anderen Liste aufheben
+                        SelectedUncompletedTask = null;
+                    }
+                    CommandManager.InvalidateRequerySuggested();
+                }
             }
-            
-            var habit = new Habit
+        }
+
+        public TaskListItem? SelectedUncompletedTask
+        {
+            get => _selectedUncompletedTask;
+            set
             {
-                Name = NewHabitName,
-                Category = NewHabitCategory == null || NewHabitCategory.Trim() == "" ? "Keine" :  NewHabitCategory,
-                CreatedAt = DateTime.Now
+                if (SetProperty(ref _selectedUncompletedTask, value))
+                {
+                    if (value != null)
+                    {
+                        // Auswahl in der anderen Liste aufheben
+                        SelectedCompletedTask = null;
+                    }
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
+        }
+
+        public EnumItem<DeleteMode> SelectedDeleteMode { get; set; }
+        public EnumItem<DeleteMode>[] DeleteModes { get; }
+
+        public ICommand OpenTaskCreationCommand { get; }
+        public ICommand MarkCompletedCommand { get; }
+        public ICommand MarkUncompletedCommand { get; }
+        public ICommand DeleteCompletedTaskCommand { get; }
+        public ICommand DeleteUncompletedTaskCommand { get; }
+        public ICommand ConfirmDeleteCommand { get; }
+        public ICommand CancelDeleteCommand { get; }
+
+        public event EventHandler<TaskCreationRequestedEventArgs>? TaskCreationRequested;
+        public event EventHandler? RecurringTaskDeletionRequested;
+        public event EventHandler? RecurringTaskDeleted;
+        public event EventHandler? RecurringTaskDeletionCanceled;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+
+        public MainViewModel(string connection)
+        {
+            _repo = new TaskRepository(connection);
+
+            OpenTaskCreationCommand = new RelayCommand(_ => OnOpenTaskCreation());
+            MarkCompletedCommand = new RelayCommand(_ => MarkCompleted(), _ => SelectedUncompletedTask != null);
+            MarkUncompletedCommand = new RelayCommand(_ => MarkUncompleted(), _ => SelectedCompletedTask != null);
+            DeleteCompletedTaskCommand = new RelayCommand(_ => OnDeleteCompletedTask(), _ => SelectedCompletedTask != null);
+            DeleteUncompletedTaskCommand = new RelayCommand(_ => OnDeleteUncompletedTask(), _ => SelectedUncompletedTask != null);
+            ConfirmDeleteCommand = new RelayCommand(_ => DeleteTask());
+            CancelDeleteCommand = new RelayCommand(_ => CancelDelete());
+
+
+            DeleteModes = new EnumItem<DeleteMode>[]
+            {
+                new EnumItem<DeleteMode>(DeleteMode.Single, "Nur diese Aufgabe"),
+                new EnumItem<DeleteMode>(DeleteMode.Uncompleted, "Ausstehende Aufgaben"),
+                new EnumItem<DeleteMode>(DeleteMode.Completed, "Erledigte Aufgaben"),
+                new EnumItem<DeleteMode>(DeleteMode.All, "Alle Aufgaben")
             };
 
-            _repo.AddHabit(habit);
-            LoadHabits();
+            SelectedDeleteMode = DeleteModes[0];
+
+            LoadTasks();
         }
 
-        private void DeleteHabit()
+        public void LoadTasks()
         {
-            if (SelectedHabit == null) return;
-
-            _repo.DeleteHabit(SelectedHabit.Habit.Id);
-            LoadHabits();
+            LoadCompletedTasks();
+            LoadUncompletedTasks();
         }
 
-        private void MarkDoneToday()
+        public void LoadCompletedTasks()
         {
-            if (SelectedHabit == null) return;
-
-            var today = DateTime.Today;
-
-            var existing = _repo.GetLogForDate(SelectedHabit.Habit.Id, today);
-
-            if (existing == null)
+            CompletedTasks.Clear();
+            foreach (TaskListItem t in _repo.GetCompletedTasksForDate(SelectedDate))
             {
-                var log = new HabitLog
-                {
-                    HabitId = SelectedHabit.Habit.Id,
-                    Date = today
-                };
-                _repo.AddLog(log);
+                TaskListItem taskListItem = SetOverdueText(t);
+                CompletedTasks.Add(taskListItem);
             }
-            LoadHabitsDoneToday();
         }
 
-        private void LoadHabitsDoneToday()
+        public void LoadUncompletedTasks()
         {
-            HabitsDoneToday.Clear();
-            var today = DateTime.Today;
-            var habits = _repo.GetHabitsForDate(today);
-            foreach (var h in habits)
-                HabitsDoneToday.Add(new HabitViewModel(h));
+            UncompletedTasks.Clear();
+            foreach (TaskListItem t in _repo.GetUncompletedTasksForDate(SelectedDate))
+            {
+                TaskListItem taskListItem = SetOverdueText(t);
+                UncompletedTasks.Add(taskListItem);
+            }
+        }
+
+        private TaskListItem SetOverdueText(TaskListItem t)
+        {
+            string overdueText = "";
+
+            if (t.IsCompleted)
+            {
+                if (t.DueDate.Date == t.CompletedAt.Date)
+                {
+                    overdueText = "Erledigt";
+                }
+                else if (t.DueDate.Date < t.CompletedAt.Date)
+                {
+                    var daysOverdue = (t.CompletedAt.Date - t.DueDate.Date).Days;
+                    string dayWord = daysOverdue == 1 ? "Tag" : "Tagen";
+                    overdueText = $"Erledigt nach {daysOverdue} {dayWord}";
+                }
+
+                t.OverdueText = overdueText;
+                return t;
+            }
+            else
+            {
+                if (t.DueDate.Date == SelectedDate)
+                {
+                    overdueText = "Heute fällig";
+                }
+                else if (t.DueDate.Date < SelectedDate)
+                {
+                    var daysOverdue = (SelectedDate - t.DueDate.Date).Days;
+                    string dayWord = daysOverdue == 1 ? "Tag" : "Tagen";
+                    overdueText = $"Seit {daysOverdue} {dayWord} überfällig";
+                }
+                t.OverdueText = overdueText;
+                return t;
+            }
+        }
+
+        private void OnOpenTaskCreation()
+        {
+            var args = new TaskCreationRequestedEventArgs(_repo, SelectedDate);
+            TaskCreationRequested?.Invoke(this, args);
+        }
+
+        private void MarkCompleted()
+        {
+            _repo.MarkTaskAsCompleted(SelectedUncompletedTask!.TaskLogId, SelectedDate);
+            LoadTasks();
+        }
+
+        private void MarkUncompleted()
+        {
+            _repo.MarkTaskAsUncompleted(SelectedCompletedTask!.TaskLogId);
+            LoadTasks();
+        }
+
+        private void OnDeleteCompletedTask()
+        {
+            if (SelectedCompletedTask!.IsRecurring)
+            {
+                RecurringTaskDeletionRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                DeleteTask();
+            }
+        }
+
+        private void OnDeleteUncompletedTask()
+        {
+            if (SelectedUncompletedTask!.IsRecurring)
+            {
+                RecurringTaskDeletionRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                DeleteTask();
+            }
+        }
+
+        private void DeleteTask()
+        {
+            if (SelectedUncompletedTask != null)
+            {
+                _repo.DeleteTaskLog(SelectedUncompletedTask.TaskLogId, SelectedDeleteMode.Value);
+
+                if (SelectedUncompletedTask.IsRecurring)
+                {
+                    RecurringTaskDeleted?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            else if (SelectedCompletedTask != null)
+            {
+                _repo.DeleteTaskLog(SelectedCompletedTask.TaskLogId, SelectedDeleteMode.Value);
+
+                if (SelectedCompletedTask.IsRecurring)
+                {
+                    RecurringTaskDeleted?.Invoke(this, EventArgs.Empty);
+                }
+            }
+
+            SelectedDeleteMode = DeleteModes[0]; // Reset to default
+            LoadTasks();
+        }
+
+        private void CancelDelete()
+        {
+            RecurringTaskDeletionCanceled?.Invoke(this, EventArgs.Empty);
+        }
+
+        // Hilfsmethode für PropertyChanged mit optionaler Aktion nach Setzen
+        protected bool SetProperty<T>(ref T field, T value, Action? onChanged = null, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            onChanged?.Invoke();
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
         }
     }
 }
