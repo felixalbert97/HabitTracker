@@ -1,6 +1,7 @@
 ﻿<Window x:Class="HabitTracker.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:HabitTracker.Models"
         Title="Habit Tracker" Height="470" Width="800">
 
     <Grid Margin="10">
@@ -19,14 +20,39 @@
         <StackPanel Grid.Column="0" Grid.Row="0" Margin="10,0,10,0">
             <TextBlock Text="Aufgaben" FontSize="20" HorizontalAlignment="Center" />
             <ListBox ItemsSource="{Binding UncompletedTasks}"
-                     SelectedItem="{Binding SelectedTask}"
-                     DisplayMemberPath="Name"
-                     Height="269" Margin="0,10,0,10"/>
+                     SelectedItem="{Binding SelectedUncompletedTask, Mode=TwoWay}"
+                     HorizontalContentAlignment="Stretch"
+                     Height="269" Margin="0,10,0,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:TaskListItem}">
+                        <Border Padding="6" Margin="2">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Orientation="Vertical" Grid.Row="0" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Category}" FontSize="12" Foreground="Gray" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding OverdueText}"
+                                           Grid.Row="1"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Bottom"
+                                           FontSize="12"
+                                           Foreground="DimGray"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
             <Button Content="Erledigt"
-                    Command="{Binding DeleteTaskCommand}"
+                    Command="{Binding MarkCompletedCommand}"
                     Margin="0,0,0,10" Width="170"/>
             <Button Content="Löschen"
-                    Command="{Binding DeleteTaskCommand}" 
+                    Command="{Binding DeleteUncompletedTaskCommand}" 
                     Margin="0,0,0,10" Width="170" />
 
 
@@ -36,20 +62,46 @@
         <StackPanel Grid.Column="1" Grid.Row="0" Margin="10,0,10,0">
             <TextBlock Text="Erledigt" FontSize="20" HorizontalAlignment="Center" />
             <ListBox ItemsSource="{Binding CompletedTasks}"
-                     SelectedItem="{Binding SelectedTask}"
-                     DisplayMemberPath="Name"
-                     Height="269" Margin="0,10,0,10"/>
+                     SelectedItem="{Binding SelectedCompletedTask, Mode=TwoWay}"
+                     HorizontalContentAlignment="Stretch"
+                     Height="269" Margin="0,10,0,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:TaskListItem}">
+                        <Border Padding="6" Margin="2">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Orientation="Vertical" Grid.Row="0" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Category}" FontSize="12" Foreground="Gray" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding OverdueText}"
+                                            Grid.Row="1"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            FontSize="12"
+                                            Foreground="DimGray"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
             <Button Content="Als nicht erledigt markieren"
-                    Command="{Binding DeleteTaskCommand}"
+                    Command="{Binding MarkUncompletedCommand}"
                     Margin="0,0,0,10" HorizontalAlignment="Center" Width="170"/>
             <Button Content="Löschen"
-                    Command="{Binding DeleteTaskCommand}"
+                    Command="{Binding DeleteCompletedTaskCommand}"
                     Margin="0,0,0,10" HorizontalAlignment="Center" Width="170"/>
 
         </StackPanel>
-        <DatePicker VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10" Grid.Column="0" Grid.ColumnSpan="2"/>
+        <DatePicker SelectedDate ="{Binding SelectedDate, Mode=TwoWay}"
+                    VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10" Grid.Column="0" Grid.ColumnSpan="2"/>
         <Button Content="Neue Aufgabe erstellen"
-                Command="{Binding DeleteTaskCommand}"
-                Margin="0,20,0,0" Grid.Column ="0" Grid.Row="1" HorizontalAlignment="Center" Width="250" VerticalAlignment="Top" />
+                Command="{Binding OpenTaskCreationCommand}"
+                Margin="0,20,0,0" Grid.Column ="0" Grid.Row="1" HorizontalAlignment="Center" Width="250" VerticalAlignment="Top" Grid.ColumnSpan="2" />
     </Grid>
 </Window>
