@@ -5,13 +5,6 @@ using System.IO;
 
 namespace HabitTracker.Services
 {
-    public enum DeleteMode
-    {
-        Single,
-        Uncompleted,
-        Completed,
-        All
-    }
 
     public class TaskRepository : ITaskRepository
     {
