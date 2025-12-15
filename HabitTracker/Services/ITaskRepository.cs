@@ -7,14 +7,16 @@ namespace HabitTracker.Services
 {
     public interface ITaskRepository
     {
-        List<TaskTemplate> GetAllTaskTemplates();
-        void AddTaskTemplate(TaskLog taskLog);
+        IEnumerable<TaskTemplate> GetAllTaskTemplates();
+        IEnumerable<TaskListItem> GetCompletedTasksForDate(DateTime date);
+        IEnumerable<TaskListItem> GetUncompletedTasksForDate(DateTime date);
+
+        void AddTaskTemplate(TaskTemplate taskTemplate);
         void DeleteTaskTemplate(int id);
-
-        List<TaskLog> GetUncompletedTasksLogsForDate(DateTime date);
-        List<TaskLog> GetCompletedTasksLogsForDate(DateTime date);
-        void AddTaskLog(TaskLog taskLog);
-        void DeleteTaskLog(int id, bool deleteAllRepetitions);
-
+        void ProcessTaskCreation(TaskCreationLog taskCreationLog);
+        public void MarkTaskAsCompleted(int id, DateTime CompletedAt);
+        public void MarkTaskAsUncompleted(int id);
+        void DeleteTaskLog(int id, DeleteMode deleteMode);
+        
     }
 }

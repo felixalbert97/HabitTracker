@@ -1,6 +1,7 @@
 ﻿using HabitTracker.Commands;
 using HabitTracker.Models;
 using HabitTracker.Services;
+using HabitTracker.Helpers;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -17,16 +18,11 @@ namespace HabitTracker.ViewModels
         private TaskTemplate? _selectedTaskTemplate;
         private string? _nameField;
         private string? _categoryField;
-        private RepeatPattern _selectedRepeatOption = RepeatPattern.Einmalig;
+        private EnumItem<RepeatPattern> _selectedRepeatOption;
         private DateTime _startDate;
         private DateTime _endDate;
 
-        public event EventHandler? TaskCreated;
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        // TODO: evtl. durch Template ViewModel ersetzen
         public ObservableCollection<TaskTemplate> TaskTemplates { get; } = new ObservableCollection<TaskTemplate>();
-
         public TaskTemplate? SelectedTaskTemplate
         {
             get => _selectedTaskTemplate;
@@ -56,7 +52,6 @@ namespace HabitTracker.ViewModels
                 CommandManager.InvalidateRequerySuggested();
             }
         }
-
         public string? CategoryField
         {
             get => _categoryField;
@@ -99,22 +94,13 @@ namespace HabitTracker.ViewModels
             }
         }
 
-        public bool IsEndDateEnabled
+        public EnumItem<RepeatPattern> SelectedRepeatOption
         {
-            get => SelectedRepeatOption != RepeatPattern.Einmalig;
-        }
-
-        public double EndDateTextOpacity
-        {
-            get => IsEndDateEnabled ? 1 : 0.5;
-        }
-
-        public RepeatPattern SelectedRepeatOption { 
             get => _selectedRepeatOption;
             set
             {
                 if (_selectedRepeatOption == value) return;
-                if (value == RepeatPattern.Einmalig)
+                if (value.Value == RepeatPattern.Single)
                 {
                     EndDate = StartDate;
                     OnPropertyChanged(nameof(EndDate));
@@ -126,15 +112,23 @@ namespace HabitTracker.ViewModels
             }
         }
 
-        public static RepeatPattern[] RepeatValues
+        public EnumItem<RepeatPattern>[] RepeatValues { get; }
+
+        public bool IsEndDateEnabled
         {
-            get => Enum.GetValues<RepeatPattern>();
+            get => SelectedRepeatOption.Value != RepeatPattern.Single;
+        }
+        public double EndDateTextOpacity
+        {
+            get => IsEndDateEnabled ? 1 : 0.5;
         }
 
         public ICommand TaskCreationCommand { get; }
         public ICommand AddTaskTemplateCommand { get; }
         public ICommand DeleteTaskTemplateCommand { get; }
 
+        public event EventHandler? TaskCreated;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
 
         public TaskCreationViewModel(ITaskRepository repo, DateTime initialDate)
@@ -149,6 +143,16 @@ namespace HabitTracker.ViewModels
                 _ => !string.IsNullOrWhiteSpace(NameField) &&
                 !(NameField == _selectedTaskTemplate?.Name && CategoryField == _selectedTaskTemplate?.Category));
             DeleteTaskTemplateCommand = new RelayCommand(_ => DeleteTaskTemplate(), _ => SelectedTaskTemplate != null);
+
+            RepeatValues = new EnumItem<RepeatPattern>[]
+            {
+                new EnumItem<RepeatPattern>(RepeatPattern.Single, "Einmalig"),
+                new EnumItem<RepeatPattern>(RepeatPattern.Daily, "Täglich"),
+                new EnumItem<RepeatPattern>(RepeatPattern.Weekly, "Wöchentlich"),
+                new EnumItem<RepeatPattern>(RepeatPattern.Monthly, "Monatlich"),
+            };
+
+            _selectedRepeatOption = RepeatValues[0];
 
             LoadTaskTemplates();
         }
@@ -168,7 +172,7 @@ namespace HabitTracker.ViewModels
                 Category = CategoryField?.Trim(),
                 StartDate = StartDate,
                 EndDate = EndDate,
-                RepeatPattern = SelectedRepeatOption,
+                RepeatPattern = SelectedRepeatOption.Value,
                 CreatedAt = DateTime.Now,
             };
 
@@ -210,7 +214,6 @@ namespace HabitTracker.ViewModels
             LoadTaskTemplates();
         }
 
-        // Wenn derselbe Eintrag erneut angeklickt wird, die Felder erneut befüllen
         public void ReapplySelectedTemplate()
         {
             if (SelectedTaskTemplate == null) return;

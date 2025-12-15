@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -14,15 +15,17 @@ namespace HabitTracker.Views
 {
     public partial class MainWindow
     {
+        private const string connection = "Data/tasks.db"; //HARDCODED CONNECTION STRING
         private readonly MainViewModel _mainViewModel;
 
         public MainWindow()
         {
             InitializeComponent();
-            _mainViewModel = new MainViewModel();
+            _mainViewModel = new MainViewModel(connection);
             DataContext = _mainViewModel;
 
             _mainViewModel.TaskCreationRequested += OnTaskCreationRequested;
+            _mainViewModel.RecurringTaskDeletionRequested += OnTaskDeletionRequested;
         }
 
         public void OnTaskCreationRequested(object? sender, TaskCreationRequestedEventArgs args)
@@ -40,6 +43,17 @@ namespace HabitTracker.Views
                 _mainViewModel.LoadTasks();
             }
 
+        }
+
+        public void OnTaskDeletionRequested(object? sender, System.EventArgs args)
+        {
+            var deleteModeWindow = new DeleteModeWindow()
+            {
+                Owner = this,
+                DataContext = _mainViewModel,
+            };
+
+            var result = deleteModeWindow.ShowDialog();
         }
     }
 }

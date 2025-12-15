@@ -6,16 +6,17 @@ namespace HabitTracker.Models
 {   
     public enum RepeatPattern
     {
-        Einmalig,
-        Täglich,
-        Wöchentlich,
-        Monatlich,
+        Single,
+        Daily,
+        Weekly,
+        Monthly,
     }
 
     public class TaskCreationLog
     {
         public int Id { get; set; }
-        public int TaskTemplateId { get; set; }
+        public string? Name { get; set; }
+        public string? Category { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public RepeatPattern RepeatPattern { get; set; }

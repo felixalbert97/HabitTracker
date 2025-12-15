@@ -16,7 +16,5 @@ namespace HabitTracker.ViewModels
             Repository = repository;
             StartDate = startDate;
         }
-        
-            
     }
 }

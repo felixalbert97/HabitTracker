@@ -62,10 +62,5 @@ namespace HabitTracker.Views
 
             }
         }
-
-        private void TemplatesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
     }
 }
