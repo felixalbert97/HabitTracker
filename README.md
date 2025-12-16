@@ -20,6 +20,22 @@ Das Projekt dient ausdrücklich **Demonstrationszwecken**.
 
 ---
 
+## Funktionaler Überblick
+
+Die Anwendung dient als **einfacher Habit- und Aufgaben-Tracker**.
+
+Benutzer können:
+- **terminbezogene Aufgaben** anlegen
+- Aufgaben als **erledigt abhaken**
+- wiederkehrende Aufgaben definieren
+- **Aufgabentemplates** speichern und erneut verwenden
+
+Durch die Verwendung von Templates und wiederkehrenden Aufgaben wird das **Einpflegen von Gewohnheiten** vereinfacht und repetitive Eingaben werden reduziert.
+
+Der Funktionsumfang ist bewusst überschaubar gehalten und dient dazu, grundlegende Konzepte wie Datenbindung, ViewModel-Logik und Persistenz mit SQLite zu demonstrieren.
+
+---
+
 ## Technischer Stack
 
 - **.NET:** 10.0  
