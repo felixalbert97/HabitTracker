@@ -33,6 +33,23 @@ Benutzer können:
 Durch die Verwendung von Templates und wiederkehrenden Aufgaben wird das **Einpflegen von Gewohnheiten** vereinfacht und repetitive Eingaben werden reduziert.
 
 Der Funktionsumfang ist bewusst überschaubar gehalten und dient dazu, grundlegende Konzepte wie Datenbindung, ViewModel-Logik und Persistenz mit SQLite zu demonstrieren.
+Die grundlegenden Ansichten der Anwendung sind im Screenshot-Abschnitt dargestellt.
+
+---
+
+## Screenshots
+
+### Hauptübersicht – Aufgabenverwaltung
+<img width="774" height="452" alt="image" src="https://github.com/user-attachments/assets/cedc5c24-4ad2-4e38-8f77-351726e36131" />
+
+
+### Aufgaben-Templates und wiederkehrende Aufgaben erstellen
+<img width="582" height="439" alt="image" src="https://github.com/user-attachments/assets/abcc4c1d-90ac-4666-97c3-5a12acda8143" />
+
+
+### Wiederkehrende Aufgaben löschen
+<img width="774" height="452" alt="image" src="https://github.com/user-attachments/assets/26e9f5b3-5daf-4206-8a7c-00bae80c9bf7" />
+
 
 ---
 
@@ -124,3 +141,5 @@ Es stellt **keinen Anspruch auf Vollständigkeit**, sondern soll einen Einblick 
 ## Hinweis
 
 Feedback und Verbesserungsvorschläge sind willkommen – das Projekt dient auch als Grundlage zur Weiterentwicklung.
+
+
